@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>2.5D中国地图 - 省份下钻</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .map-container {
+            width: 800px;
+            height: 600px;
+            perspective: 1000px;
+            margin: 20px auto;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .map-3d {
+            transform-style: preserve-3d;
+            transform: rotateX(10deg);
+            transition: transform 0.3s;
+        }
+        .province {
+            fill: #4a90e2;
+            stroke: white;
+            stroke-width: 0.5;
+            transition: fill 0.2s, transform 0.2s;
+            cursor: pointer;
+        }
+        .province:hover {
+            fill: #ff4444;
+            transform: translateZ(10px);
+        }
+        .back-button {
+            display: none;
+            padding: 8px 16px;
+            background: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 10px;
+        }
+        .title {
+            text-align: center;
+            color: #333;
+        }
+        .current-view {
+            text-align: center;
+            color: #666;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">中国地图 - 商业数据展示</h1>
+    <div class="current-view" id="view-title">全国视图</div>
+    <div class="map-container">
+        <div class="map-3d">
+            <svg id="china-map" width="100%" height="100%"></svg>
+        </div>
+        <button class="back-button" id="back-btn">返回全国</button>
+    </div>
+
+    <script>
+        // 简化版中国GeoJSON数据
+        const chinaGeoJSON = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": { "name": "北京市" },
+                    "geometry": { 
+                        "type": "Polygon", 
+                        "coordinates": [
+                            [
+                                [116.4, 39.9], 
+                                [116.5, 39.9], 
+                                [116.5, 40.0], 
+                                [116.4, 40.0],
+                                [116.4, 39.9]
+                            ]
+                        ] 
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": { "name": "上海市" },
+                    "geometry": { 
+                        "type": "Polygon", 
+                        "coordinates": [
+                            [
+                                [121.4, 31.2], 
+                                [121.5, 31.2], 
+                                [121.5, 31.3], 
+                                [121.4, 31.3],
+                                [121.4, 31.2]
+                            ]
+                        ] 
+                    }
+                }
+            ]
+        };
+
+        // 省份详细数据
+        const provinceData = {
+            "北京市": {
+                "name": "北京市",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "朝阳区" },
+                        "geometry": { 
+                            "type": "Polygon", 
+                            "coordinates": [
+                                [
+                                    [116.45, 39.95], 
+                                    [116.5, 39.95], 
+                                    [116.5, 40.0], 
+                                    [116.45, 40.0],
+                                    [116.45, 39.95]
+                                ]
+                            ] 
+                        }
+                    }
+                ]
+            },
+            "上海市": {
+                "name": "上海市",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "黄浦区" },
+                        "geometry": { 
+                            "type": "Polygon", 
+                            "coordinates": [
+                                [
+                                    [121.45, 31.25], 
+                                    [121.5, 31.25], 
+                                    [121.5, 31.3], 
+                                    [121.45, 31.3],
+                                    [121.45, 31.25]
+                                ]
+                            ] 
+                        }
+                    }
+                ]
+            }
+        };
+
+        // 绘制地图
+        function drawMap(geoJSON) {
+            const svg = document.getElementById('china-map');
+            svg.innerHTML = '';
+
+            geoJSON.features.forEach(feature => {
+                const coords = feature.geometry.coordinates[0];
+                const pathData = coords.map(coord => `${coord[0]},${coord[1]}`).join(' ');
+
+                const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                polygon.setAttribute('points', pathData);
+                polygon.setAttribute('class', 'province');
+                polygon.setAttribute('data-province', feature.properties.name);
+                svg.appendChild(polygon);
+            });
+        }
+
+        // 点击下钻到省份地图
+        document.getElementById('china-map').addEventListener('click', function(e) {
+            if (e.target.classList.contains('province')) {
+                const province = e.target.getAttribute('data-province');
+                if (provinceData[province]) {
+                    document.getElementById('view-title').textContent = `${province} - 区域视图`;
+                    document.getElementById('back-btn').style.display = 'block';
+                    drawMap(provinceData[province]);
+                } else {
+                    alert(`点击了${province}，这里可以加载省级地图数据`);
+                }
+            }
+        });
+
+        // 返回全国地图
+        document.getElementById('back-btn').addEventListener('click', function() {
+            document.getElementById('view-title').textContent = '全国视图';
+            this.style.display = 'none';
+            drawMap(chinaGeoJSON);
+        });
+
+        // 初始化
+        drawMap(chinaGeoJSON);
+    </script>
+</body>
+</html>
